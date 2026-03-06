@@ -6,17 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        // Paggama sa roles table
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('name'); // Mao ni ang i-insert sa seeder: 'admin', 'manager', 'user'
-            $table->boolean('role_inactive')->default(false);
-            $table->timestamps();
-        });
+        // I-check kung wala pa ba ang table sa dili pa kini buhaton
+        if (!Schema::hasTable('roles')) {
+            Schema::create('roles', function (Blueprint $table) {
+                $table->id();
+                $table->string('name'); // Admin, Manager, User
+                $table->boolean('role_inactive')->default(false);
+                $table->timestamps();
+            });
+        }
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('roles');
