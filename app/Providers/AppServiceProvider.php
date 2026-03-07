@@ -3,8 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Schema; // Gidugang para safe
-use Carbon\Carbon; // Gidugang para sa Time
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL; // Importante para sa HTTPS fix
+use Carbon\Carbon;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,12 +23,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // 1. SET GLOBAL TIMEZONE (Asia/Manila)
-        // Kini ang mopugos sa tibuok system nga mosunod sa oras sa Pilipinas
         config(['app.timezone' => 'Asia/Manila']);
         date_default_timezone_set('Asia/Manila');
         Carbon::setLocale('en');
 
-        // 2. PREVENT MIGRATION ERRORS (Optional pero recommended)
+        // 2. PREVENT MIGRATION ERRORS
         Schema::defaultStringLength(191);
+
+        // 3. FORCE HTTPS IN PRODUCTION
+        // Kini ang mopa-wala sa "Not Secure" warning inig submit og forms sa Render
+        if (app()->environment('production') || env('APP_ENV') === 'production') {
+            URL::forceScheme('https');
+        }
     }
 }
