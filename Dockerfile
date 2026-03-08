@@ -33,4 +33,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # 8. Run migrations and start
-CMD php artisan migrate:fresh --seed --force && apache2-foreground
+CMD php artisan migrate --force && apache2-foreground
