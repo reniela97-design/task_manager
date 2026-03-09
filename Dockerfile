@@ -1,8 +1,14 @@
 FROM php:8.2-apache
 
-# 1. Install dependencies
+# 1. Install system dependencies & Node.js (needed for Vite)
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev libpng-dev \
+    git \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    curl \
+    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
     && docker-php-ext-install pdo pdo_mysql zip
 
 RUN a2enmod rewrite
@@ -12,11 +18,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# 3. Kopyahon ang tanang files (Apil ang ca.pem)
+# 3. Kopyahon ang tanang files
 COPY . . 
 
-# 4. KINI ANG IMPORTANTE NGA FIX:
-# I-siguro nga ang ca.pem moadto sa saktong folder nga gipangita sa imong database.php
+# 4. Database SSL Fix (ca.pem)
 RUN mkdir -p /var/www/html/storage/certs && \
     cp ca.pem /var/www/html/storage/certs/ca.pem || true
 
@@ -25,12 +30,17 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# 6. Install dependencies
+# 6. Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# 7. I-set ang permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# 7. VITE FIX: Install Node dependencies & Build assets
+# Kini ang mohimo sa public/build/manifest.json
+RUN npm install
+RUN npm run build
 
-# 8. Run migrations and start
+# 8. I-set ang permissions (Gi-apil ang public/build)
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public/build
+
+# 9. Run migrations and start
 CMD php artisan migrate --force && apache2-foreground
